@@ -10,12 +10,14 @@
 <uses-permission android:name="com.sec.android.iap.permission.BILLING" />
 <!--Nokia-->
 <uses-permission android:name="com.nokia.payment.BILLING"/>
+<!--SlideME-->
+<uses-permission android:name="com.slideme.sam.manager.inapp.permission.BILLING" />
 <!--Fortumo-->
+<!--
 <uses-permission android:name="android.permission.RECEIVE_SMS"/>
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 <uses-permission android:name="android.permission.SEND_SMS" />
-<!--SlideME-->
-<uses-permission android:name="com.slideme.sam.manager.inapp.permission.BILLING" />
-
 <uses-feature android:name="android.hardware.telephony" android:required="false"/>
+-->
+

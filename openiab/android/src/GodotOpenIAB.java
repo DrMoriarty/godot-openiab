@@ -7,6 +7,7 @@ import android.content.Intent;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Arrays;
 
 import org.onepf.oms.OpenIabHelper;
 import org.onepf.oms.SkuManager;
@@ -41,8 +42,8 @@ public class GodotOpenIAB extends Godot.SingletonBase {
         //The registration of this and its functions
         registerClass("OpenIAB", new String[]{
                 "init", "registerCallback", "unregisterCallback",
-                "mapYandexSku", "mapNokiaSku", "mapAmazonSku", "mapApplandSku", "mapSlidemeSku", "mapSamsungSku",
-                "purchase", "consume", "enableLogging"
+                "mapYandexSku", "mapNokiaSku", "mapAmazonSku", "mapApplandSku", "mapSlidemeSku", "mapSamsungSku", "mapGoogleSku",
+                "queryInventory", "skuInfo", "purchase", "consume", "enableLogging"
         });
 
         callbackFunctions = new HashMap<String, String>();
@@ -62,27 +63,22 @@ public class GodotOpenIAB extends Godot.SingletonBase {
     }
 
     // Run a callback to GDscript
-    private void runCallback(final String callback_type, final String argument) {
+    private void runCallback(final String callback_type, final Object argument) {
         if (callbackFunctions.containsKey(callback_type)) {
             GodotLib.calldeferred(instanceId, callbackFunctions.get(callback_type), new Object[]{ argument });
         }
     }
 
     //initialization of OpenIAB
-    public void init(final int new_instanceId, final String googleKey, final String yandexKey, final String applandKey, final String slidemeKey) {
+    public void init(final int new_instanceId, final Dictionary appStoreKeys) {
         instanceId = new_instanceId;
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                HashMap STORE_KEYS_MAP = new HashMap<>();
-                if(googleKey != null && googleKey.length() > 0)
-                    STORE_KEYS_MAP.put(OpenIabHelper.NAME_GOOGLE, googleKey);
-                if(yandexKey != null && yandexKey.length() > 0)
-                    STORE_KEYS_MAP.put(OpenIabHelper.NAME_YANDEX, yandexKey);
-                if(applandKey != null && applandKey.length() > 0)
-                    STORE_KEYS_MAP.put(OpenIabHelper.NAME_APPLAND, applandKey);
-                if(slidemeKey != null && slidemeKey.length() > 0)
-                    STORE_KEYS_MAP.put(OpenIabHelper.NAME_SLIDEME, slidemeKey);
+                HashMap<String, String> STORE_KEYS_MAP = new HashMap<>();
+                for(String key: appStoreKeys.get_keys()) {
+                    STORE_KEYS_MAP.put(key, appStoreKeys.get(key).toString());
+                }
                 OpenIabHelper.Options.Builder builder = new OpenIabHelper.Options.Builder()
                     .setStoreSearchStrategy(OpenIabHelper.Options.SEARCH_STRATEGY_INSTALLER_THEN_BEST_FIT)
                     .setVerifyMode(OpenIabHelper.Options.VERIFY_EVERYTHING)
@@ -90,16 +86,22 @@ public class GodotOpenIAB extends Godot.SingletonBase {
                 mHelper = new OpenIabHelper(activity, builder.build());
                 mHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
                         public void onIabSetupFinished(IabResult result) {
+                            runCallback("inited", Integer.toString(result.getResponse()));
                             if (!result.isSuccess()) {
                                 showToast("Problem setting up in-app billing: " + result);
                                 return;
                             }
-                            Log.d(TAG, "Setup successful. Querying inventory.");
-                            mHelper.queryInventoryAsync(mGotInventoryListener);
+                            Log.d(TAG, "Setup successful.");
                         }
                     });
             }
         });
+    }
+    
+    public void queryInventory(String[] skus) {
+        Log.d(TAG, "Querying inventory.");
+        List<String> moreSkus = Arrays.asList(skus);
+        mHelper.queryInventoryAsync(true, moreSkus, mGotInventoryListener);
     }
 
     public void mapYandexSku(final String sku, final String newSku) {
@@ -124,6 +126,10 @@ public class GodotOpenIAB extends Godot.SingletonBase {
 
     public void mapSamsungSku(final String sku, final String newSku) {
         SkuManager.getInstance().mapSku(sku, OpenIabHelper.NAME_SAMSUNG, newSku);
+    }
+
+    public void mapGoogleSku(final String sku, final String newSku) {
+        SkuManager.getInstance().mapSku(sku, OpenIabHelper.NAME_GOOGLE, newSku);
     }
 
     public Dictionary skuInfo(final String sku) {
