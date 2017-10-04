@@ -8,6 +8,7 @@ import android.content.Intent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Arrays;
+import java.lang.IllegalStateException;
 
 import org.onepf.oms.OpenIabHelper;
 import org.onepf.oms.SkuManager;
@@ -24,6 +25,7 @@ public class GodotOpenIAB extends Godot.SingletonBase {
     private int instanceId = 0;
     private Toast toast;
     private final String TAG = "OpenIAB";
+    private boolean debugMode = false;
     OpenIabHelper mHelper;
     Inventory mInventory;
 
@@ -143,7 +145,11 @@ public class GodotOpenIAB extends Godot.SingletonBase {
                 item.put("title", details.getTitle());
                 item.put("description", details.getDescription());
                 item.put("itemType", details.getItemType());
+            } else {
+                Log.e(TAG, "SKU not found: "+sku);
             }
+        } else {
+            Log.e(TAG, "Inventory not loaded");
         }
         return item;
     }
@@ -152,8 +158,13 @@ public class GodotOpenIAB extends Godot.SingletonBase {
         /* TODO: for security, generate your payload here for verification. See the comments on
          *        verifyDeveloperPayload() for more info. Since this is a SAMPLE, we just use
          *        an empty string, but on a production app you should carefully generate this. */
-        String payload = "";
-        mHelper.launchPurchaseFlow(activity, sku, RC_REQUEST, mPurchaseFinishedListener, payload);
+        try {
+            String payload = "";
+            mHelper.launchPurchaseFlow(activity, sku, RC_REQUEST, mPurchaseFinishedListener, payload);
+        } catch (IllegalStateException e) {
+            Log.e(TAG, e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     public void consume(final String sku) {
@@ -169,6 +180,7 @@ public class GodotOpenIAB extends Godot.SingletonBase {
 
     public void enableLogging() {
         Logger.setLoggable(true);
+        debugMode = true;
     }
 
     // Listener that's called when we finish querying the items and subscriptions we own
@@ -189,6 +201,7 @@ public class GodotOpenIAB extends Godot.SingletonBase {
                         Log.d(TAG, "Owned "+sku);
                         runCallback("owned", sku);
                     }
+                    runCallback("loaded", skus.toArray(new String[0]));
                 }
             };
 
@@ -257,12 +270,16 @@ public class GodotOpenIAB extends Godot.SingletonBase {
     }
 
     private void showToast(final String text) {
-        if (toast == null) {
-            toast = Toast.makeText(activity, text, Toast.LENGTH_SHORT);
+        if(debugMode) {
+            if (toast == null) {
+                toast = Toast.makeText(activity, text, Toast.LENGTH_SHORT);
+            }
+            toast.setText(text);
+            toast.setDuration(Toast.LENGTH_SHORT);
+            toast.show();
+        } else {
+            Log.d(TAG, text);
         }
-        toast.setText(text);
-        toast.setDuration(Toast.LENGTH_SHORT);
-        toast.show();
     }
 
     @Override protected void onMainActivityResult (int requestCode, int resultCode, Intent data)
