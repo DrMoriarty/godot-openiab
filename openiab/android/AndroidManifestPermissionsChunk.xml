@@ -2,7 +2,7 @@
 <!--all-->
 <uses-permission android:name="android.permission.INTERNET"/>
 <!--Google Play-->
-<uses-permission android:name="com.android.vending.BILLING" />
+<!--uses-permission android:name="com.android.vending.BILLING" /-->
 <!--Open Store-->
 <uses-permission android:name="org.onepf.openiab.permission.BILLING" />
 <!--Amazon requires no permissions -->
